@@ -696,6 +696,15 @@ impl S3Profile {
                 ]
             }},
             {{
+                "Sid": "Kms",
+                "Effect": "Allow",
+                "Action": [
+                    "kms:Decrypt",
+                    "kms:GenerateDataKey"
+                ],
+                "Resource": "*"
+            }},
+            {{
                 "Sid": "ListBucketForFolder",
                 "Effect": "Allow",
                 "Action": "s3:ListBucket",

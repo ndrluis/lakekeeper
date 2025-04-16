@@ -1,0 +1,43 @@
+FROM --platform=linux/arm64 rust:1.85-slim-bookworm AS builder
+
+ARG TARGET=aarch64-unknown-linux-musl
+ARG BINARY_NAME=iceberg-catalog
+ENV NODE_VERSION=23.3.0
+ENV NVM_DIR=/root/.nvm
+
+# Install required packages including Linux headers
+RUN apt-get update -qq && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -yqq \
+    cmake \
+    curl \
+    build-essential \
+    libpq-dev \
+    pkg-config \
+    make \
+    perl \
+    wget \
+    zip \
+    unzip \
+    musl-tools \
+    musl-dev \
+    linux-libc-dev \
+    --no-install-recommends && \
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash && \
+    . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION} && \
+    . "$NVM_DIR/nvm.sh" && nvm use v${NODE_VERSION} && \
+    . "$NVM_DIR/nvm.sh" && nvm alias default v${NODE_VERSION} && \
+    node -v && npm -v
+
+ENV PATH="/root/.nvm/versions/node/v${NODE_VERSION}/bin/:${PATH}"
+
+# Add target
+RUN rustup target add ${TARGET}
+
+# Create a new project
+WORKDIR /app
+
+# Copy over your manifests and source code
+COPY . .
+
+# Build with environment variables to handle cross-compilation
+RUN SQLX_OFFLINE=true cargo build --release --all-features --locked --bin ${BINARY_NAME}
